@@ -1,0 +1,224 @@
+---
+title: "Project - Group 4"
+author: "Akhilesh"
+date: "July 21, 2018"
+output: html_document
+---
+### Objective: To predict the probability of a customer subscribing to bank deposit on making a call
+
+#### Hypotheses:
+1. Month plays an important role as people might be warm during some holiday seasons
+2. More educated people tend to subscribe if talked for more duration
+3. Millenials tend to subscribe more as they might be looking to start for their deposits
+4. Customers who were contacted last time but did not subscribe might not subscribe as this might go as spam for them
+5. New customers are more inclined to subscribe if the duration of conversation is high
+6. People with housing loan and personal loan are less likely to subsribe to a deposit
+7. There will be high success rate through cellphones as they allow for reaching out to customers at some convenient times
+8. Divorced/single people might have less subscription rate as they might not have an active family to take care of 
+9. More the number of contacts with a single person higher is the subscription rate
+
+```{r}
+# Setting up the directory
+setwd("E:\\Summer II\\Intro to Predictive modelling\\Group Project\\bank-additional")
+library(dplyr)
+library(ggplot2)
+library(reshape2)
+
+# Importing the data
+raw_data <- read.csv("bank-additional-full.csv",header=T,na.strings=c(""))
+
+```
+#### Finding:
+* 89% of the clients have not subscribed to a term deposit over time
+
+#### Checking the distribution of factor variables in the data and plotting the same
+```{r}
+is.fact <- sapply(raw_data, is.factor)
+factors.raw <- raw_data[, is.fact]
+mdata <- melt(factors.raw, id=c("y"))
+k <- summarise(group_by(mdata,variable,value,y),count =n())
+uniq <- unique(k$variable)
+
+for (i in uniq){
+  idx <- match(i,uniq)
+  l = list()
+  t <- subset(k,k$variable == i)
+  assign(paste("k", i, sep = ""), data.frame(t))
+  p <- ggplot(t, aes(factor(value), count, fill = y)) +
+    geom_bar(stat="identity", position = "dodge") +
+    scale_fill_brewer(palette = "Set1") + ggtitle(i) 
+  assign(paste("p", idx, sep = ""), p) # need to check the syntax
+}
+
+require(gridExtra)
+grid.arrange(p1,p2,p3,p4,p5,p6,p7,p8,p9,p10, ncol=3)
+
+# Deep diving into job and Education factors for further understanding
+t1 <- subset(k,k$variable == 'job')
+plot1 <- ggplot(k, aes(factor(value), count, fill = y)) +
+  geom_bar(stat="identity", position = "dodge") +
+  scale_fill_brewer(palette = "Set1") + ggtitle('job')
+# Need to the check the layout of the graph
+
+t2 <- subset(k,k$variable == 'education')
+plot2 <- ggplot(t2, aes(factor(value), count, fill = y)) +
+  geom_bar(stat="identity", position = "dodge") +
+  scale_fill_brewer(palette = "Set1") + ggtitle('education')
+grid.arrange(plot1,plot2, ncol=1)
+```
+
+
+
+### Treating the data
+```{r}
+# 1.Duration = 0 has to be removed to remove customers that are not contacted
+df <- subset(raw_data,duration != 0)
+# 2.Create bins for age
+df$age <- cut(df$age,c(1,20,40,60,100))
+# 3. Checking the missing values
+sapply(df,function(x) sum(is.na(x)))
+# There are no missing values in the data
+# 4. mismap() plot to check the missing values visually
+library(Amelia)
+missmap(df, main = "Missing values vs observed")
+# Again there are no missing values as observed in the previous step
+# 5. Checking if the categorical variables are classified as factor variables
+df$y = as.factor(df$y)
+is.factor(df$y)
+# R has correctly identified categorical variables as factor variables
+contrasts(df$marital) # Step to identify how to create dummy variables
+# 6. Changing the yes and no values to 1 and 0 in the y variable
+df[,'y'] <- sapply(df[,'y'],function(x) ifelse(x=='yes',1,0))
+```
+
+
+### Various classification models to predict the probability of subscription
+
+#### Feature selection
+#### Lasso regression
+```{r}
+library(glmnet)
+set.seed(99)
+XXca <- model.matrix(y~., data=data.frame(df))[,-1]
+term_deposit = df$y
+Lasso.Fit = glmnet(x=XXca,y = term_deposit, family = "binomial", alpha=1)
+
+par(mfrow=c(1,2))
+plot(Lasso.Fit)
+
+CV.L = cv.glmnet(XXca, term_deposit,alpha=1)
+LamL = CV.L$lambda.1se
+plot(log(CV.L$lambda),sqrt(CV.L$cvm),main="LASSO CV (k=10)",xlab="log(lambda)",ylab = "RMSE",col=4,type="b",cex.lab=1.2)
+abline(v=log(LamL),lty=2,col=2,lwd=2)
+
+coef.L = predict(CV.L,type="coefficients",s=LamL)
+summary(coef.L)
+coef.L
+
+# Features that are selected through Lasso regression
+features = c("age.60.100.","jobblue.collar","jobstudent","monthmar","monthmay","monthjul",
+             "monthjun","monthnov","day_of_weekmon","poutcomenonexistent",
+             "duration","educationuniversity.degree",
+             "pdays","poutcomesuccess","cons.conf.idx","nr.employed","y")
+
+# Creating a model matrix again for selecting the important features
+mod.mat = model.matrix(~., data=data.frame(df))[,-1]
+temp_data = data.frame(mod.mat)
+sel_features_dat_vf <- temp_data[,features] 
+```
+
+#### Creating train and test data
+```{r}
+library(caret)
+train <- createDataPartition(y=sel_features_dat_vf$y,p=0.8,list=FALSE)
+train_data <- sel_features_dat_vf[train,]
+test_data <- sel_features_dat_vf[-train,]
+
+```
+
+
+#### Logistic regression - Yet to cross validate
+##### Model fitting
+```{r}
+# is.factor(train_data$y)
+
+model <- glm(train_data$y ~.,family=binomial(link='logit'),data=train_data)
+levels(train_data$y)
+summary(model)
+unique(train_data$y)
+```
+
+#### Assessing the predictive ability of the model
+```{r}
+fitted.results <- predict(model,test_data[,1:17],type='response')
+answers = test_data$y
+
+# Confusion matrix
+table(test_data$y, fitted.results > 0.3)
+
+
+# test <- cbind(fitted.results,test_data$y1)
+# misClasificError <- mean(fitted.results1 != test_data$y1)
+# print(paste('Accuracy',1-misClasificError))
+
+# ROC Curve
+library(ROCR)
+ROCRpred <- prediction(fitted.results, test_data$y)
+ROCRperf <- performance(ROCRpred, 'tpr','fpr')
+plot(ROCRperf, colorize = TRUE, text.adj = c(-0.2,1.7))
+
+# AUC calculation
+auc_ROCR <- performance(ROCRpred, measure = "auc")
+auc_ROCR
+
+## ROC curve can be used for both logistic and randomforests
+require(pROC)
+rf.roc<-roc(answers,fitted.results)
+plot(rf.roc)
+auc(rf.roc)
+
+```
+
+### Random Forests
+```{r}
+
+library(caret)
+train <- createDataPartition(y=df$y,p=0.8,list=FALSE)
+train_data <- df[train,]
+test_data <- df[-train,]
+
+library(randomForest)
+# model1<- randomForest(y ~ ., data = train_data, ntree = 500, mtry = 6, importance = TRUE)
+# model1
+
+model2<- randomForest(y ~ ., data = train_data, ntree = 500, mtry = 10, importance = TRUE)
+model2
+
+# model3<- randomForest(y ~ ., data = train_data, ntree = 750, mtry = 15, importance = TRUE)
+# model3
+
+
+predValid <- predict(model2, test_data, type = "response")
+table(predValid, test_data$y)
+
+require(pROC)
+rf.roc<-roc(train_data$y,model2$votes[,2])
+plot(rf.roc)
+pROC::auc(rf.roc)
+# ROC curve
+
+require(randomForest)
+data(iris)
+
+# This will make drop a class to make it a 2 class problem
+iris<-iris[-which(iris$Species=="setosa"),]
+iris$Species<-as.factor(as.character(iris$Species))
+
+set.seed(71)
+iris.rf<-randomForest(Species ~ ., data=iris,ntree=10)
+iris.rf$votes
+require(pROC)
+rf.roc<-roc(iris$Species,iris.rf$votes[,2])
+plot(rf.roc)
+auc(rf.roc)
+```

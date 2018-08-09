@@ -1,0 +1,945 @@
+---
+title: "Predictive Models Take Home Exam"
+author: "Joey Chen"
+date: "July 29, 2018"
+output: html_document
+---
+##Chapter 2 # 10
+###(a)
+```{r setup}
+library(MASS)
+attach(Boston)
+nrow(Boston)
+ncol(Boston)
+```
+Boston data set has 506 rows and 14 columns. <br>
+Rows represent housing values obervations. <br>
+Columns represent different features. <br>
+
+###(b)
+```{r}
+names(Boston)
+pairs(Boston)
+```
+
+1. It seems like crim has positive realation with age, and has negative relation with dis and medv. <br>
+2. nox has positive realation with age and negative relation with dis. <br>
+3. medv has positive realation with rm and negative relation with lstat. <br>
+
+###(c)
+```{r}
+par(mfrow=c(1,3))
+plot(age,crim)
+plot(dis,crim)
+plot(tax,crim)
+```
+
+According to the first plot, the older the house, the higher the per capita crime rate. <br>
+Based on the second plot, we can see that the closer to working area, the more the per capita crime rate. <br>
+According to the last plot, higher tax rate may lead to more per capita crime rate. <br>
+
+###(d)
+```{r}
+par(mfrow=c(1,3))
+hist(crim)
+hist(tax)
+hist(ptratio)
+
+length(crim[crim>40])
+```
+
+According to the first plot, we can see most of the suburb has low crime rates. But there are 6 areas that crime rates are above 40. <br>
+Based on the second plot, we can see that there is a big difference in tax rates. There are many low tax rates area but there are not few high tax rates areas too. <br>
+According to the last plot, most areas have high ratio. <br>
+
+###(e)
+```{r}
+length(chas[chas==1])
+```
+There are 35 suburbs bound the Charles river. 
+
+###(f)
+```{r}
+median(ptratio)
+```
+The median pupil-teacher ratio is 19.05. 
+
+###(g)
+```{r}
+t(subset(Boston, medv == min(medv)))
+
+summary(zn)
+summary(nox)
+summary(tax)
+summary(lstat)
+```
+
+There are two suburbs has lowest medv. They are pretty similar in other predictors too. They both have high crime rates, low zn, not bounded by river, high on nox, very old houses, high tax rates, high ptratio and high lstat. 
+
+###(h)
+```{r}
+length(rm[rm>7])
+length(rm[rm>8])
+t(subset(Boston,rm>8))
+```
+
+There are 64 suburbs average more than 7 rooms per dwelling, and there are 13 suburbs average more than 8 rooms per dwelling.<br>
+Suburbs with 8 rm tends to have low crim andlow lstat. 
+
+
+##Chapter 3 # 15
+###(a)
+```{r}
+lm.zn = lm(crim~zn)
+lm.indus = lm(crim~indus)
+lm.chas = lm(crim~chas)
+lm.nox = lm(crim~nox)
+lm.rm = lm(crim~rm)
+lm.age = lm(crim~age)
+lm.dis = lm(crim~dis)
+lm.rad = lm(crim~rad)
+lm.tax = lm(crim~tax)
+lm.ptratio = lm(crim~ptratio)
+lm.black = lm(crim~black)
+lm.lstat = lm(crim~lstat)
+lm.medv = lm(crim~medv)
+summary(lm.zn)
+summary(lm.indus)
+summary(lm.chas)
+summary(lm.nox)
+summary(lm.rm)
+summary(lm.age)
+summary(lm.dis)
+summary(lm.rad)
+summary(lm.tax)
+summary(lm.ptratio)
+summary(lm.black)
+summary(lm.lstat)
+summary(lm.medv)
+```
+
+It turns out that almost every predictors have statistically significant association with crim, except for chas. 
+
+```{r}
+plot(zn,crim)
+abline(lm.zn,col='red')
+plot(indus,crim)
+abline(lm.indus,col='red')
+plot(nox,crim)
+abline(lm.nox,col='red')
+plot(rm,crim)
+abline(lm.rm,col='red')
+plot(age,crim)
+abline(lm.age,col='red')
+plot(dis,crim)
+abline(lm.dis,col='red')
+plot(rad,crim)
+abline(lm.rad,col='red')
+plot(tax,crim)
+abline(lm.tax,col='red')
+plot(ptratio,crim)
+abline(lm.ptratio,col='red')
+plot(black,crim)
+abline(lm.black,col='red')
+plot(lstat,crim)
+abline(lm.lstat,col='red')
+plot(medv,crim)
+abline(lm.medv,col='red')
+```
+
+As we can see, the red line(linear regression function) often represent the trend. 
+
+###(b)
+```{r}
+lm.all = lm(crim~. , data = Boston)
+summary(lm.all)
+```
+
+Under 95% confidence level, we can reject zn, dis, rad, black and medv's null hypothesis. 
+
+###(c)
+```{r}
+uni = c(coefficients(lm.zn)[2],
+      coefficients(lm.indus)[2],
+      coefficients(lm.chas)[2],
+      coefficients(lm.nox)[2],
+      coefficients(lm.rm)[2],
+      coefficients(lm.age)[2],
+      coefficients(lm.dis)[2],
+      coefficients(lm.rad)[2],
+      coefficients(lm.tax)[2],
+      coefficients(lm.ptratio)[2],
+      coefficients(lm.black)[2],
+      coefficients(lm.lstat)[2],
+      coefficients(lm.medv)[2])
+multi = coefficients(lm.all)[2:14]
+plot(uni, multi)
+points(uni[4], multi[4],col='red')
+```
+
+Coefficient for nox is 31 in simple regression but in multivariate regression it is -10. 
+
+###(d)
+```{r}
+lm.zn3 = lm(crim~poly(zn,3))
+lm.indus3 = lm(crim~poly(indus,3))
+lm.nox3 = lm(crim~poly(nox,3))
+lm.rm3 = lm(crim~poly(rm,3))
+lm.age3 = lm(crim~poly(age,3))
+lm.dis3 = lm(crim~poly(dis,3))
+lm.rad3 = lm(crim~poly(rad,3))
+lm.tax3 = lm(crim~poly(tax,3))
+lm.ptratio3 = lm(crim~poly(ptratio,3))
+lm.black3 = lm(crim~poly(black,3))
+lm.lstat3 = lm(crim~poly(lstat,3))
+lm.medv3 = lm(crim~poly(medv,3))
+summary(lm.zn3)
+summary(lm.indus3)
+summary(lm.nox3)
+summary(lm.rm3)
+summary(lm.age3)
+summary(lm.dis3)
+summary(lm.rad3)
+summary(lm.tax3)
+summary(lm.ptratio3)
+summary(lm.black3)
+summary(lm.lstat3)
+summary(lm.medv3)
+detach(Boston)
+```
+
+As we can see, indus, nox, age, dis, ptratio and medv all have 1, 2 and 3 degree polynomial relation with crim. zn, rm, rad, tax and lstat have 1 and 2 degree polynomail relation with crim, but black only have 1 degree polynomial realtion with crim. 
+
+
+## Chapter 6 # 9
+###(a)
+```{r}
+rm(list=ls())
+
+library(ISLR)
+library(caret)
+set.seed(99)
+train <- createDataPartition(y = College$Apps, p=0.8,list = F)
+College_train = College[train,]
+College_test = College[-train,]
+
+```
+
+###(b)
+```{r}
+lm.all = lm(Apps~., data = College_train)
+lm.pred = predict(lm.all, College_test)
+err_lm = mean((College_test$Apps - lm.pred)^2)
+err_lm
+```
+The test error is 1386567. 
+
+###(c)
+```{r}
+library(glmnet)
+set.seed(99)
+train_xmat <- model.matrix(Apps~., data=College_train)[,-1]
+test_xmat <- model.matrix(Apps~., data=College_test)[,-1]
+ridge.fit <- cv.glmnet(train_xmat, College_train$Apps, alpha = 0)
+best_lambda_ridge <- ridge.fit$lambda.min
+ridge.pred <- predict(ridge.fit, s=best_lambda_ridge, newx= test_xmat)
+err_ridge = mean((College_test$Apps - ridge.pred)^2)
+err_ridge
+```
+The test error is 1361483. Ridge regression's test error is lower than OLS. 
+
+###(d)
+```{r}
+set.seed(99)
+
+lasso.fit <- cv.glmnet(train_xmat, College_train$Apps, alpha = 1)
+best_lambda_lasso <- lasso.fit$lambda.min
+lasso.pred <- predict(lasso.fit, s=best_lambda_lasso, newx= test_xmat)
+err_lasso = mean((College_test$Apps - lasso.pred)^2)
+err_lasso
+non_zero_pred <- colnames(train_xmat)[which(coef(lasso.fit,s="lambda.min")!=0)]
+length(non_zero_pred)-1  # minus intercept
+```
+
+Lasso regression's test error is 1340749, which is lower than ridge regression. There are 16 non-zero coefficient estimates. 
+
+###(e)
+```{r}
+library(pls)
+set.seed(99)
+pcr.fit <- pcr(Apps~., data = College_train, scale=T,validation="CV" )
+pcr.pred <- predict(pcr.fit, College_test,ncomp = pcr.fit$ncomp)
+
+err_pcr = mean((College_test$Apps - pcr.pred)^2)
+err_pcr
+validationplot(pcr.fit, val.type="MSEP")
+pcr.fit$ncomp
+```
+
+PCR's test error is 1386567. M is 17. 
+
+###(f)
+```{r}
+set.seed(99)
+pls.fit <- plsr(Apps~., data = College_train, scale=T,validation="CV" )
+pls.pred <- predict(pls.fit, College_test,ncomp = pls.fit$ncomp)
+
+err_pls = mean((College_test$Apps - pls.pred)^2)
+err_pls
+validationplot(pls.fit, val.type="MSEP")
+pls.fit$ncomp
+```
+
+PLS's test error is 1386567, and M is 17. 
+
+###(g)
+```{r}
+all_error = c(err_lm,err_ridge,err_lasso,err_pcr,err_pls)
+names(all_error) = c("lm","ridge","lasso","pcr","pls")
+barplot(all_error,ylab = "MSE")
+```
+
+Although we can see that lasso regression's test error is the smallest, it does not improve from OLS model. 
+
+
+## Chapter 6 # 11
+###(a)
+####Best Subset
+```{r}
+rm(list=ls())
+
+library(leaps)
+set.seed(99)
+
+#########################################################
+#From internet: make predict function can be applied on #regsubsets object
+predict.regsubsets <- function(object, newdata, id, ...){
+  form <- as.formula(object$call[[2]])
+  mat <- model.matrix(form, newdata)
+  coefi <- coef(object, id=id)
+  xvars <- names(coefi)
+  mat[,xvars]%*%coefi
+}
+#######################################################
+
+k = 10
+p = ncol(Boston) - 1
+folds = sample(rep(1:k, length = nrow(Boston)))
+cv.errors = matrix(0, k, p)
+for (i in 1:k) {
+    best.fit = regsubsets(crim ~ ., data = Boston[folds != i, ], nvmax = p)
+    for (j in 1:p) {
+        pred = predict(best.fit, Boston[folds == i, ], id = j)
+        cv.errors[i, j] = mean((Boston$crim[folds == i] - pred)^2)
+    }
+}
+mse.cv = apply(cv.errors, 2, mean)
+plot(mse.cv, pch = 19, type = "b")
+best_p = which.min(mse.cv)
+best.mse = mse.cv[best_p]
+best_p
+best.mse
+```
+After 10-fold CV, best subset has the smallest test MSE when p=11. Test MSE is 41.90797.
+
+####Ridge Regression
+```{r}
+set.seed(99)
+train <- createDataPartition(y = Boston$crim, p=0.8,list = F)
+Boston_train <- Boston[train,]
+Boston_test <- Boston[-train,]
+train_xmat <- model.matrix(crim~., data = Boston_train)[,-1]
+test_xmat <- model.matrix(crim~., data = Boston_test)[,-1]
+
+ridge.fit <- cv.glmnet(train_xmat, Boston_train$crim, alpha=0)
+best_lambda_ridge = ridge.fit$lambda.min
+ridge.pred <- predict(ridge.fit, s=best_lambda_ridge, newx = test_xmat)
+plot(ridge.fit)
+ridge.mse <- (mean((Boston_test$crim - ridge.pred)^2))
+best_lambda_ridge
+ridge.mse
+```
+The best lambda for ridge regression is 0.5855451. <br>
+Test MSE is 23.66762.
+
+####Lasso Regression
+```{r}
+set.seed(99)
+
+lasso.fit <- cv.glmnet(train_xmat, Boston_train$crim, alpha=1)
+best_lambda_lasso = lasso.fit$lambda.min
+lasso.pred <- predict(lasso.fit, s=best_lambda_lasso, newx = test_xmat)
+plot(lasso.fit)
+lasso.mse <- (mean((Boston_test$crim - lasso.pred)^2))
+best_lambda_lasso
+lasso.mse
+```
+The best lambda for lasso regression is 0.06732346. <br>
+Test MSE is 23.94604.
+
+####PCR
+```{r}
+set.seed(99)
+
+pcr.fit = pcr(crim~., data = Boston_train, scale=T, validation = "CV")
+pcr.pred <- predict(pcr.fit, Boston_test,ncomp = pcr.fit$ncomp)
+validationplot(pcr.fit, val.type="MSEP")
+pcr.mse = mean((Boston_test$crim - pcr.pred)^2)
+pcr.mse
+pcr.fit$ncomp
+```
+PCR's test MSE is 24.67265.<br>
+M is 13. 
+
+###(b)
+```{r}
+all.mse = c(best.mse,ridge.mse,lasso.mse,pcr.mse)
+names(all.mse) = c("best subset","ridge","lasso","pcr")
+barplot(all.mse,ylab="MSE")
+```
+
+Ridge regression has the smallest test MSE. 
+
+###(c)
+The model I choose is ridge regression model, because it has the smallest test MSE. Unlike best subset and lasso, ridge regression involves all of the features. However, the codfficeints maybe really close to zero. 
+
+
+##Chapter 4 # 10
+###(a)
+```{r}
+rm(list=ls())
+
+library(ISLR)
+summary(Weekly)
+cor(Weekly[, -9])
+pairs(Weekly)
+```
+
+As we can see, Year has a strong correlation with Volume. Other features do not have any discernible correlation with each other. 
+
+###(b)
+```{r}
+logit.fit <- glm(Direction~.,data=Weekly[,c(2:7,9)] ,family=binomial)
+summary(logit.fit)
+```
+It seems like only Lag2 has statistically significant value. No other predictors have any significant value. 
+
+###(c)
+```{r}
+logit.probs = predict(logit.fit, type = "response")
+logit.pred = rep("Down", length(logit.probs))
+logit.pred[logit.probs > 0.5] = "Up"
+contrasts(Weekly$Direction)
+table(logit.pred, Weekly$Direction)
+(54+557) / (54+430+48+557) # Accuracy
+48 / (54+48) # FPR
+```
+This model has 56.11% accuracy. <br>
+Missclassification rate is 43.89%. <br>
+False Positive rate is 47%. <br>
+
+###(d)
+```{r}
+train = Weekly$Year<2009
+Weekly_train = Weekly[train,]
+Weekly_test = Weekly[-train,]
+
+logit.fit2 = glm(Direction~Lag2, data = Weekly_train, family = binomial)
+summary(logit.fit2)
+
+logit.probs2 = predict(logit.fit2, newdata=Weekly_test, type = "response")
+logit.pred2 = rep("Down", length(logit.probs2))
+logit.pred2[logit.probs2 > 0.5] = "Up"
+contrasts(Weekly_train$Direction)
+table(logit.pred2, Weekly_test$Direction)
+mean(logit.pred2 == Weekly_test$Direction)
+
+25/(32+25)
+```
+Accuracy is 56.25%, better than previous model. <br>
+False Positive rate is 43.86%, lower than previous model. <br>
+
+###(g)
+```{r}
+library(class)
+set.seed(99)
+train_xmat <- as.matrix(Weekly_train$Lag2)
+test_xmat <- as.matrix(Weekly_test$Lag2)
+knn.fit <- knn(train_xmat, test_xmat, Weekly_train$Direction, k=1)
+table(knn.fit, Weekly_test$Direction)
+mean(knn.fit == Weekly_test$Direction)
+46/(437+46)
+```
+Accuracy for KNN is 91.54%, much higher than previous models.<br>
+False Positive rate is only 9.5%, much lower than previous models. 
+
+###(h)
+For this problem, KNN produced the best result. Because KNN model has the highest accuracy and lowest false positive rate. 
+
+###(i)
+####LOgitic Regression with Lag1, Lag2 and Lag1*Lag2
+```{r}
+logit.fit3 <- glm(Direction~Lag1*Lag2, data = Weekly_train, family = binomial)
+summary(logit.fit3)
+
+logit.probs3 = predict(logit.fit3, newdata=Weekly_test, type = "response")
+logit.pred3 = rep("Down", length(logit.probs3))
+logit.pred3[logit.probs3 > 0.5] = "Up"
+table(logit.pred3, Weekly_test$Direction)
+mean(logit.pred3 == Weekly_test$Direction)
+
+```
+There are no significant value for all coefficients. Accuracy is 55%, slightly better than the model only having Lag2. 
+
+####LOgitic Regression with only Lag1
+```{r}
+logit.fit4 <- glm(Direction~Lag1, data = Weekly_train, family = binomial)
+summary(logit.fit4)
+
+logit.probs4 = predict(logit.fit4, newdata=Weekly_test, type = "response")
+logit.pred4 = rep("Down", length(logit.probs3))
+logit.pred4[logit.probs4 > 0.5] = "Up"
+table(logit.pred4, Weekly_test$Direction)
+mean(logit.pred4 == Weekly_test$Direction)
+
+```
+Lag1 has statistically significant value and accuracy is 55.51%. Much better than only using Lag2 as a predictor. 
+
+####KNN with different k
+```{r}
+knn.fit2 <- knn(train_xmat, test_xmat, Weekly_train$Direction, k=10)
+table(knn.fit2, Weekly_test$Direction)
+mean(knn.fit2 == Weekly_test$Direction)
+```
+```{r}
+knn.fit3 <- knn(train_xmat, test_xmat, Weekly_train$Direction, k=20)
+table(knn.fit3, Weekly_test$Direction)
+mean(knn.fit3 == Weekly_test$Direction)
+```
+It seems like in this case, k=1 produce the best result when using only Lag2 as feature, but the model will be too complex. I will choose KNN using k=20, because it is not too complex and it improves almost 10% accuracy from logistic regression.  
+
+
+##Chapter 8 # 8
+###(a)
+```{r}
+rm(list=ls())
+
+set.seed(99)
+train <- createDataPartition(y = Carseats$Sales, p=0.8,list = F)
+Carseats_train = Carseats[train,]
+Carseats_test = Carseats[-train,]
+```
+
+###(b)
+```{r}
+library(tree)
+tree.fit <- tree(Sales~., data = Carseats_train)
+summary(tree.fit)
+plot(tree.fit)
+text(tree.fit,col="blue",cex=.7)
+
+tree.pred = predict(tree.fit, Carseats_test)
+mean((Carseats_test$Sales - tree.pred)^2)
+```
+This tree model's test MSE is 4.983931. 
+
+###(c)
+```{r}
+set.seed(99)
+cv.carseats <- cv.tree(tree.fit, FUN=prune.tree)
+best_size_index= which(cv.carseats$dev==min(cv.carseats$dev))
+best_size = cv.carseats$size[best_size_index]
+plot(cv.carseats$size, cv.carseats$dev)
+points(cv.carseats$size[best_size_index],cv.carseats$dev[best_size_index],col="red")
+abline(v=cv.carseats$size[best_size_index],col='magenta',lty=2)
+best_size
+
+prune.carseats = prune.tree(tree.fit, best = 6)
+plot(prune.carseats)
+text(prune.carseats,col="blue",cex=.8)
+
+prune.pred <- predict(prune.carseats,newdata=Carseats_test)
+mean((Carseats_test$Sales - prune.pred)^2)
+
+```
+After cross-validation, model choose size 6 as its optimal level of tree complexity. After pruning, test MSE is 4.7488. It makes improvement from tree model. 
+
+###(d)
+```{r}
+library(randomForest)
+set.seed(99)
+
+bag.fit <- randomForest(Sales~., data=Carseats_train, mtry=10,ntree=1000,importance=T)
+bag.pred = predict(bag.fit,Carseats_test)
+mean((Carseats_test$Sales - bag.pred)^2)
+
+importance(bag.fit)
+varImpPlot(bag.fit)
+```
+
+Test MSE is 2.153094. It seems that bagging model is much better than tree model. <br>
+We can see that ShelveLoc and Price are top 2 most important variables. 
+
+###(e)
+```{r}
+set.seed(99)
+
+rf.fit <- randomForest(Sales~., data=Carseats_train, mtry=3,ntree=1000,importance=T)
+rf.pred = predict(rf.fit,Carseats_test)
+mean((Carseats_test$Sales - rf.pred)^2)
+
+importance(rf.fit)
+varImpPlot(rf.fit)
+```
+
+Test MSE is 2.561612, slightly higher than bagging model.<br> ShelveLoc and Price are still top 2 most important variables.
+
+```{r}
+set.seed(99)
+
+err = c()
+for (i in c(1:10)){
+  rf.fit <- randomForest(Sales~., data=Carseats_train, mtry=i,ntree=1000,importance=T)
+  rf.pred = predict(rf.fit,Carseats_test)
+  err[i] = mean((Carseats_test$Sales - rf.pred)^2)
+}
+m=c(1:10)
+plot(m,err)
+abline(v=m[which(err==min(err))],lty=2)
+err[which(err==min(err))]
+```
+If m increase, it means we use more predictors per tree, the model will be more complex. In this case, using m=8 can obtain the lowest test MSE: 2.134007. It is lower than bagging model's test MSE.  
+
+
+##Chapter 8 # 11
+###(a)
+```{r}
+rm(list=ls())
+
+train<-c(1:1000)
+Caravan$Purchase = ifelse(Caravan$Purchase == "Yes", 1, 0)
+Caravan_train = Caravan[train, ]
+Caravan_test = Caravan[-train, ]
+```
+
+###(b)
+```{r}
+library(gbm)
+set.seed(99)
+boost.fit <- gbm(Purchase~., data = Caravan_train, n.trees = 1000, shrinkage = 0.01,distribution = "bernoulli")
+summary(boost.fit)
+  
+```
+It seems like PPERSAUT, MKOOPKLA and MOPLHOOG are top 3 most important predictors for this boosting model. 
+
+###(c)
+####Boosting
+```{r}
+boost.prob = predict(boost.fit, Caravan_test, n.trees = 1000, type = "response")
+boost.pred = ifelse(boost.prob > 0.2, 1, 0)
+table(Caravan_test$Purchase, boost.pred)
+
+33/(123+33)
+accuracy_boost = mean((Caravan_test$Purchase==boost.pred))
+accuracy_boost
+```
+There are 21.15% of the people predicted to make a purchase
+actually make one.<br> This boosting model has 92.14% accuracy. 
+####KNN
+```{r}
+set.seed(99)
+
+train_matx = as.matrix(subset(Caravan_train, select = -Purchase))
+test_matx = as.matrix(subset(Caravan_test, select = -Purchase))
+
+accuracy_knn=c()
+for (i in c(1:10)) {
+  knn.pred <- knn(train_matx, test_matx,Caravan_train$Purchase, k=i)
+  accuracy_knn[i] = mean(Caravan_test$Purchase==knn.pred)
+}
+best_k = which(accuracy_knn==max(accuracy_knn))
+best_k
+
+knn.pred10 <- knn(train_matx, test_matx,Caravan_train$Purchase, k=10)
+table(Caravan_test$Purchase, knn.pred10)
+accuracy_knn[10]
+```
+As we can see, when k reach 9 and higher, accuracy tends to stablize. We should choose k=10, because it is a much less complex model. Using k=10 KNN, we predict 5 people will purchase but in fact there is no purchase. The reason might be that in KNN, we cannot change the threshold just like logistic regression or boosting. <br>
+This KNN model has 93.92% accuracy
+
+####Logistic Regression
+```{r}
+logit.fit <- glm(Purchase~., data = Caravan_train, family = binomial)
+logit.prob <- predict(logit.fit, newdata=Caravan_test, type="response")
+logit.pred = ifelse(logit.prob > 0.2, 1, 0)
+table(Caravan_test$Purchase, logit.pred)
+58/(350+58)
+accuracy_logit = mean((Caravan_train$Purchase==logit.pred))
+accuracy_logit
+```
+In logistic regression model, there are 14.22% of the people predicted to make a purchase actually make one.<br>
+Logistic regression model's accuracy is 86.64%. <br><br>
+In general, boosting is the best model of all. It has higher true positive rate and a higher accuracy. (We didn't change the threshold of KNN model, so all the prediction is 0, which leads to higher accuracy. )
+
+
+##Problem 1: Beauty Pays!
+###1.
+```{r}
+rm(list=ls())
+library(caret)
+
+df_beauty <- read.csv("C:/Joey/MSBA Summer/Intro to Predictive Model/dataset/BeautyData.csv")
+
+set.seed(9)
+
+train <- createDataPartition(y = df_beauty$CourseEvals, p=0.8,list = F)
+beauty_train <- df_beauty[train,]
+beauty_test <- df_beauty[-train,]
+
+beauty.fit <- lm(CourseEvals~BeautyScore, data = beauty_train)
+summary(beauty.fit)
+beauty.pred <- predict(beauty.fit, newdata = beauty_test)
+beauty_mse <- mean((beauty_test$CourseEvals - beauty.pred)^2)
+beauty_mse
+
+```
+
+First, we can consider using a simple regression to see the effect of beauty into course ratings. As we can see, this linear model says that beauty predictors has a statistically siginificant value. The coefficient is positive, so we can say if the teacher is beautiful, his or her course ratings will be higher. <br>
+This simple regression model has 0.2303 test MSE.<br><br>
+Now, we should consider other determinants that will affect course ratings. 
+```{r}
+all.fit <- lm(CourseEvals~., data = beauty_train)
+summary(all.fit)
+all.pred <- predict(all.fit, newdata = beauty_test)
+all_mse <- mean((beauty_test$CourseEvals - all.pred)^2)
+all_mse
+```
+As we can see, every predictors have a statistically significant value, except for tenure track. This model tells us, if the teacher is pretty, his or her course rating will be high. If the teacher is a female, course rating will be low. If the course is lower division class, the rating will be low. If the teacher's native language is not English, the rating will be low. <br>
+This model has 0.1943 test MSE, meaning it is better than the previous simple regression model. 
+
+###2.
+Regression model can capture predictor's effect on dependent variable. We can see if the predictors have correlation with dependent variable, and we can know how much increase in predictors will lead to how much change in dependent variable. But it is hard to know if there is any causality. <br><br>
+Furthermore, it is impossible to know whether this outcome represents productivity or discrimination, because there is no way we can seperate these effect in linear regression. We wouldn't know beautiful teachers make students learn more and give higher ratings, or students want to give higher rating just because teachers are beautiful. Only thing we know is that if teachers are more beautiful, they tends to get higher ratings. 
+
+
+##Problem 2: Housing Price Structure
+
+###1
+```{r}
+rm(list=ls())
+
+df_city <- read.csv("C:/Joey/MSBA Summer/Intro to Predictive Model/dataset/MidCity.csv")
+df_city$Nbhd<-as.factor(df_city$Nbhd)
+city.fit = lm(Price~.-Home, data = df_city)
+summary(city.fit)
+```
+According to the linear model result, BrickYes has statistically significant positive coefficient. It means that when everything else being equal, brick houses tend to have a premium of 17297.35. 
+
+###2
+According to the linear model result, Nbhd3 has statistically significant positive coefficient. It means that when other predictors being equal, houses in neighborhood 3 tend to have 20681.037 more price than neighborhood 1.  
+
+###3
+Brick houses in neighborhood 3 tend to have 37978.387 more price than non-brick houses in neighborhood 1. 
+
+###4
+```{r}
+df_city$Nbhd<-as.integer(df_city$Nbhd)
+df_city$Nbhd<-ifelse(df_city$Nbhd==3,"newer","older")
+df_city$Price<-scale(df_city$Price)
+set.seed(99)
+train <- createDataPartition(y=df_city$Price, p=0.8, list=F)
+city_train <- df_city[train,]
+city_test <- df_city[-train,]
+
+city.fit2 = lm(Price~.-Home, data = city_train)
+summary(city.fit2)
+city.pred <- predict(city.fit2, newdata = city_test)
+city.mse <- mean((city_test$Price - city.pred)^2)
+city.mse
+```
+After changing neighborhood 1 and 2 to older, we can see that older neighborhood tends to decrease price value. After scaling price value, we can see that this linear regression model has 0.130332 test MSE. 
+
+##Problem 3: What caues what??
+###1
+Becuase we don't know which variable is the cause. Government tends to put more cops on higher crime areas. So, if we apply linear regression using Crime and Police, we cannot explain what happens. Maybe more cops leads to more crime, or this area has more crime so the government sends more cops in this area. 
+
+###2
+They add a new variable called TerrorismAlert. This variable has nothing to do with street crime, but it has strong relation with police number. So, in high alert day police number will increase becuse of the terrorism alert, not because of the street crime. Now, we can observe if street crime decrease due to the increase of the police. This concept is similar to Instrumental Variable. We can find a variable related to predictors but not correlated to the dependent variable. As a result, we can use this variable to observe the changing in dependent variable, then isolating the changing of the predictor. <br><br>
+So, in Table 2, we can see that when alert is high, it makes the number of police increases, then crime significantly decreases.
+
+###3
+They made a hypothesis that maybe number of the tourists decreases because of the high terrorism alert, then causes low victim in street crime. So, when they add METRO ridership into the regression model, they can see how terrorism alert affects crime rates holding number of the tourists or potential victims fixed. By doing this, they can be sure that crime rates go down not because terror alert makes the number of the potential victims decrease. 
+
+###4
+They added initeraction between terrorism alert and districts. It is because when terrorism alert is high, police will flood into district that is most likely to be attacked, such as White House. Holding other districts fixed, we can examine how terrorism alert affects in district 1. 
+
+
+##Problem 4: BART
+####Random Forest
+```{r}
+rm(list=ls())
+library(caret)
+library(BART)
+library(randomForest)
+library(gbm)
+
+df_ca <- read.csv("C:/Joey/MSBA Summer/Intro to Predictive Model/dataset/CAhousing.csv")
+df_ca$medianHouseValue <- log(df_ca$medianHouseValue)
+
+set.seed(99)
+
+train <- createDataPartition(y=df_ca$medianHouseValue,p=0.8,list=F)
+ca_train <- df_ca[train,]
+ca_test <- df_ca[-train,]
+
+p=ncol(ca_train)-1
+mtryv = c(sqrt(p),p)
+ntreev = c(100,500)
+parmrf = expand.grid(mtryv,ntreev)
+colnames(parmrf)=c('mtry','ntree')
+nset = nrow(parmrf)
+olrf = rep(0,nset)
+ilrf = rep(0,nset)
+rffitv = vector('list',nset)
+for(i in 1:nset) {
+  cat('doing rf ',i,' out of ',nset,'\n')
+  temprf = randomForest(medianHouseValue~.,data=ca_train,mtry=parmrf[i,1],ntree=parmrf[i,2])
+  ifit = predict(temprf)
+  ofit=predict(temprf,newdata=ca_test)
+  olrf[i] = sum((ca_test$medianHouseValue-ofit)^2)
+  ilrf[i] = sum((ca_train$medianHouseValue-ifit)^2)
+  rffitv[[i]]=temprf
+}
+ilrf = round(sqrt(ilrf/nrow(ca_train)),3); olrf = round(sqrt(olrf/nrow(ca_test)),3)
+
+print(cbind(parmrf,olrf,ilrf))
+```
+
+
+For random forest model, the best out of sample loss is when m=8 and B=100. m=8 and B=500 has the same lowest loss but it is more complex. The lowest test loss is 0.228. 
+
+####Boosting
+```{r}
+set.seed(99)
+idv = c(4,10)
+ntv = c(500,1000)
+lamv=c(.001,.2)
+parmb = expand.grid(idv,ntv,lamv)
+colnames(parmb) = c('tdepth','ntree','lam')
+print(parmb)
+nset = nrow(parmb)
+olb = rep(0,nset)
+ilb = rep(0,nset)
+bfitv = vector('list',nset)
+for(i in 1:nset) {
+  cat('doing boost ',i,' out of ',nset,'\n')
+  tempboost = gbm(medianHouseValue~.,data=ca_train,distribution='gaussian',               interaction.depth=parmb[i,1],n.trees=parmb[i,2],shrinkage=parmb[i,3])
+  ifit = predict(tempboost,n.trees=parmb[i,2])
+  ofit=predict(tempboost,newdata=ca_test,n.trees=parmb[i,2])
+  olb[i] = sum((ca_test$medianHouseValue-ofit)^2)
+  ilb[i] = sum((ca_train$medianHouseValue-ifit)^2)
+  bfitv[[i]]=tempboost
+}
+ilb = round(sqrt(ilb/nrow(ca_train)),3); olb = round(sqrt(olb/nrow(ca_test)),3)
+
+print(cbind(parmb,olb,ilb))
+```
+
+When d=10, B=1000 and lambda=0.2, boosting model has the best out of sample loss. It has 0.23 out of sample error. However, we should consider using d=4, B=500 and lambda = 0.2 model, because it is a much easier model with a decent out of sample error. It's out of sample loss is 0.238. 
+
+####BART
+```{r}
+set.seed(99)
+bart.fit <- wbart(ca_train[,1:8],ca_train$medianHouseValue)
+bart.pred <- predict(bart.fit, as.matrix(ca_test[,1:8]))
+bart_rmse = round(sqrt(mean((ca_test$medianHouseValue - bart.pred)^2)),3)
+bart_rmse
+```
+As we can see, using BART obtain a 0.773 out of sample error. It is much worse than random forest and boosting.  
+
+
+##Problem 5: Neural Nets
+```{r results='hide'}
+rm(list=ls())
+library(MASS)
+library(caret)
+library(nnet)
+
+df_Boston <- subset(Boston,select = -chas)
+minv = rep(0,12)
+maxv = rep(0,12)
+df_Bostonsc = df_Boston
+for(i in 1:12) {
+  minv[i] = min(df_Boston[[i]])
+  maxv[i] = max(df_Boston[[i]])
+  df_Bostonsc[[i]] = (df_Boston[[i]]-minv[i])/(maxv[i]-minv[i])
+}
+
+set.seed(99)
+
+n = nrow(df_Bostonsc)
+kcv = 10
+n0 = round(n/kcv,0)
+out_MSE = matrix(0,kcv,9)
+used = NULL
+set = 1:n
+
+sizenn <- c(5,10,50)
+decaynn <- c(.00001,.1,.5)
+paramnn <- expand.grid(sizenn, decaynn)
+colnames(paramnn) <- c('size','decay')
+nset <- nrow(paramnn)
+
+for (j in 1:kcv) {
+  
+  if(n0<length(set)){val = sample(set,n0)}
+  if(n0>=length(set)){val=set}
+  
+  Boston_train = df_Bostonsc[-val,]
+  Boston_test = df_Bostonsc[val,]
+  
+  for (i in 1:nset) {
+    Boston.nn <- nnet(medv~., Boston_train,size=paramnn[i,1],decay=paramnn[i,2])
+    Boston.pred <- predict(Boston.nn,Boston_test)
+    aux <- mean((Boston_test$medv - Boston.pred)^2)
+    out_MSE[j,i] = aux
+    }
+  used = union(used,val)
+  set = (1:n)[-used]
+  }
+
+```
+
+```{r}
+mMSE = apply(out_MSE,2,mean)
+best_param <- which(mMSE==min(mMSE))
+min(mMSE)
+paramnn[best_param,]
+```
+After using 10-fold cross validation, we get the best set of parameter as size=10, decay=0.5 and size=50, decay=0.5. These sets of parameter both yield the same test MSE, 548.3125. We should use size=10 and decay=0.5 because this would be a easier model and have the same performance. 
+
+
+##Problem 6: Final Project
+In the first group meeting, I found a great websites for datasets called UCI Machine Learning Datasets. We used the Bank Marketing dataset and in that websites and tried to use logistic regression and random forest to predict whether an individual would subscribe a term deposit or not. I enjoyed the discussion we had, so I proposed to have a meeting every day after class. Every one in my team was very supportive and intelligent. We distributed our work and made our goal very efficiently.<br><br>
+I was responsible for using logistics regression to fit the data and find some insights. Because we were dealing with many categorical predictors in our dataset, I used information value to select the predictors and put them into logistic regression model. I found out that age, job, weekday, duration and unemployment rate had significant coefficients. So during the presentation, I tried to use a funny and humorous way to explain how these features affect the probability of a person subscribe a term deposit. <br><br>
+After fitting the model, I used confusion matrix and ROC curve to obtain the error rate and True positive rate. I explained why we should not focus on misclassification rate and we should observe the true positive rate to my teammates. We finally used my explanation in our presentation and figured out how to improve our predictive model. <br><br>
+I learned a lot in this project and I had tons of fun. I learned how to communicate within a team project, how to use R to build a model from scratch, how to use statistics to solve problems and how to present a business project to the audience. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

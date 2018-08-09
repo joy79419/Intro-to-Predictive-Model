@@ -1,0 +1,147 @@
+---
+title: "problem5"
+author: "Joey Chen"
+date: "August 2, 2018"
+output: html_document
+---
+##Problem 4: BART
+####Random Forest
+```{r}
+rm(list=ls())
+library(caret)
+library(BART)
+library(randomForest)
+library(gbm)
+
+df_ca <- read.csv("C:/Joey/MSBA Summer/Intro to Predictive Model/dataset/CAhousing.csv")
+df_ca$medianHouseValue <- log(df_ca$medianHouseValue)
+
+set.seed(99)
+
+train <- createDataPartition(y=df_ca$medianHouseValue,p=0.8,list=F)
+ca_train <- df_ca[train,]
+ca_test <- df_ca[-train,]
+
+p=ncol(ca_train)-1
+mtryv = c(sqrt(p),p)
+ntreev = c(100,500)
+parmrf = expand.grid(mtryv,ntreev)
+colnames(parmrf)=c('mtry','ntree')
+nset = nrow(parmrf)
+olrf = rep(0,nset)
+ilrf = rep(0,nset)
+rffitv = vector('list',nset)
+for(i in 1:nset) {
+  cat('doing rf ',i,' out of ',nset,'\n')
+  temprf = randomForest(medianHouseValue~.,data=ca_train,mtry=parmrf[i,1],ntree=parmrf[i,2])
+  ifit = predict(temprf)
+  ofit=predict(temprf,newdata=ca_test)
+  olrf[i] = sum((ca_test$medianHouseValue-ofit)^2)
+  ilrf[i] = sum((ca_train$medianHouseValue-ifit)^2)
+  rffitv[[i]]=temprf
+}
+ilrf = round(sqrt(ilrf/nrow(ca_train)),3); olrf = round(sqrt(olrf/nrow(ca_test)),3)
+
+print(cbind(parmrf,olrf,ilrf))
+```
+
+
+For random forest model, the best out of sample loss is when m=8 and B=100. m=8 and B=500 has the same lowest loss but it is more complex. The lowest test loss is 0.228. 
+
+####Boosting
+```{r}
+set.seed(99)
+idv = c(4,10)
+ntv = c(500,1000)
+lamv=c(.001,.2)
+parmb = expand.grid(idv,ntv,lamv)
+colnames(parmb) = c('tdepth','ntree','lam')
+print(parmb)
+nset = nrow(parmb)
+olb = rep(0,nset)
+ilb = rep(0,nset)
+bfitv = vector('list',nset)
+for(i in 1:nset) {
+  cat('doing boost ',i,' out of ',nset,'\n')
+  tempboost = gbm(medianHouseValue~.,data=ca_train,distribution='gaussian',               interaction.depth=parmb[i,1],n.trees=parmb[i,2],shrinkage=parmb[i,3])
+  ifit = predict(tempboost,n.trees=parmb[i,2])
+  ofit=predict(tempboost,newdata=ca_test,n.trees=parmb[i,2])
+  olb[i] = sum((ca_test$medianHouseValue-ofit)^2)
+  ilb[i] = sum((ca_train$medianHouseValue-ifit)^2)
+  bfitv[[i]]=tempboost
+}
+ilb = round(sqrt(ilb/nrow(ca_train)),3); olb = round(sqrt(olb/nrow(ca_test)),3)
+
+print(cbind(parmb,olb,ilb))
+```
+
+When d=10, B=1000 and lambda=0.2, boosting model has the best out of sample loss. It has 0.23 out of sample error. However, we should consider using d=4, B=500 and lambda = 0.2 model, because it is a much easier model with a decent out of sample error. It's out of sample loss is 0.238. 
+
+####BART
+```{r}
+set.seed(99)
+bart.fit <- wbart(ca_train[,1:8],ca_train$medianHouseValue)
+bart.pred <- predict(bart.fit, as.matrix(ca_test[,1:8]))
+bart_rmse = round(sqrt(mean((ca_test$medianHouseValue - bart.pred)^2)),3)
+bart_rmse
+```
+As we can see, using BART obtain a 0.773 out of sample error. It is much worse than random forest and boosting.  
+
+
+##Problem 5: Neural Nets
+```{r}
+rm(list=ls())
+library(MASS)
+library(caret)
+library(nnet)
+
+df_Boston <- subset(Boston,select = -chas)
+minv = rep(0,12)
+maxv = rep(0,12)
+df_Bostonsc = df_Boston
+for(i in 1:12) {
+  minv[i] = min(df_Boston[[i]])
+  maxv[i] = max(df_Boston[[i]])
+  df_Bostonsc[[i]] = (df_Boston[[i]]-minv[i])/(maxv[i]-minv[i])
+}
+
+set.seed(99)
+
+n = nrow(df_Bostonsc)
+kcv = 10
+n0 = round(n/kcv,0)
+out_MSE = matrix(0,kcv,9)
+used = NULL
+set = 1:n
+
+sizenn <- c(5,10,50)
+decaynn <- c(.00001,.1,.5)
+paramnn <- expand.grid(sizenn, decaynn)
+colnames(paramnn) <- c('size','decay')
+nset <- nrow(paramnn)
+
+for (j in 1:kcv) {
+  
+  if(n0<length(set)){val = sample(set,n0)}
+  if(n0>=length(set)){val=set}
+  
+  Boston_train = df_Bostonsc[-val,]
+  Boston_test = df_Bostonsc[val,]
+  
+  for (i in 1:nset) {
+    Boston.nn <- nnet(medv~., Boston_train,size=paramnn[i,1],decay=paramnn[i,2])
+    Boston.pred <- predict(Boston.nn,Boston_test)
+    aux <- mean((Boston_test$medv - Boston.pred)^2)
+    out_MSE[j,i] = aux
+    }
+  used = union(used,val)
+  set = (1:n)[-used]
+  }
+
+mMSE = apply(out_MSE,2,mean)
+
+best_param <- which(mMSE==min(mMSE))
+paramnn[best_param,]
+
+```
+
